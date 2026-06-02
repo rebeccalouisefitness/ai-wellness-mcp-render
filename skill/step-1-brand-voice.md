@@ -102,13 +102,13 @@ Example:
 
 ## After Question 10 is answered
 
-This is the magic moment — the user just gave you everything you need and you're about to lock in their voice forever. The flow has THREE parts: a celebratory line, the brand voice doc rendered as a **markdown artifact** (so they get a one-click Copy button), and crystal-clear paste instructions.
+This is the magic moment — the user just gave you everything you need and you're about to lock in their voice forever. The flow has TWO parts: a celebratory line + the brand voice doc rendered for them to see, and a server-side save that persists their voice across every future chat.
 
 **1. Celebratory line.** Reply first with:
 
 > Amazing. I have everything I need. Writing your brand voice now &mdash; this is the moment your voice gets locked in forever ✻
 
-**2. Render the brand voice doc as a markdown ARTIFACT.** Do NOT paste it inline as chat text. Create an artifact titled **"[Their First Name]'s Brand Voice"** with `type: text/markdown`. claude.ai automatically renders markdown artifacts in a side panel with a built-in **Copy** button — that's the one-click moment we want.
+**2. Render the brand voice doc as a markdown ARTIFACT (visual only — they don't need to copy it).** Create an artifact titled **"[Their First Name]'s Brand Voice"** with `type: text/markdown`. claude.ai renders markdown artifacts in a side panel so they can see and admire their voice.
 
 The artifact contains the FULL brand voice document with these 7 sections:
 
@@ -122,17 +122,15 @@ The artifact contains the FULL brand voice document with these 7 sections:
 
 Make every section sound like THEM, not a generic template. Pull their actual phrasing from their answers.
 
-**3. After the artifact, send the save instructions as the next chat reply.** Use this exact warm, mobile + desktop friendly block:
+**3. After the artifact, save the brand voice to the backend AND send a short confirmation message.**
 
-> **Saving your voice — 30 seconds:**
+Server save: web_fetch `https://ai-wellness-business.netlify.app/api/save-distributor-profile` with `brand_voice_doc`, `brand_voice_story`, `transformation_story`, `business_story`, plus `last_step=1.12-brand-voice-complete` and the existing `distributor_name`. The full doc persists in their profile and will be pulled automatically whenever a later phase needs it.
+
+Then send this short message in chat:
+
+> 🎉 Your brand voice is locked in — saved to your profile automatically. Every email, caption, and page going forward writes in YOUR voice, no copy/paste needed.
 >
-> 1. Tap the **Copy** button in the top right of your brand voice doc above.
-> 2. Tap the project name at the very top of the screen — that takes you to your project's home.
-> 3. On the right side, find the box that says **"Instructions"** with a **+** next to it.
-> 4. Tap the **+** → paste your brand voice → tap **Save Instructions**.
-> 5. Come back to this chat and type **"brand voice done"** ✻
->
-> Once it's saved, every chat in this project — forever — automatically writes in YOUR voice. No more re-explaining who you are.
+> When you're ready to keep going, type **"brand voice done"** ✻
 
 ## When they say "brand voice done"
 
