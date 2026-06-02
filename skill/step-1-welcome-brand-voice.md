@@ -117,9 +117,9 @@ After the code block, fire (suggested phrasing — adapt for tone):
 
 > **🎉 Your Brand Voice is ready!**
 >
-> Save it (~60 sec): (1) **Copy icon** at top-right of the brand voice block above. (2) Click the project name "AI Wellness Business" at the top. (3) Find the **Custom Instructions** box on the right. (4) Click in, hit Enter twice, right-click → Paste. (5) Save. (6) Type **brand voice done** ✻
+> Saved to your profile automatically — it's now baked into every page, email, and post going forward. You don't need to copy or paste anything. Type **brand voice done** when you're ready to keep going ✻
 
-**Then do:** call `save_distributor_profile` with `{ brand_voice_doc, brand_voice_story, transformation_story, business_story, last_step: "1.12-brand-voice-complete" }`. Wait for `brand voice done` (or `done` / `saved` / `next` / `continue` / `go`).
+**Then do:** Save the brand voice to the backend immediately via the save URL with `brand_voice_doc`, `brand_voice_story`, `transformation_story`, `business_story`, and `last_step: "1.12-brand-voice-complete"` included as query parameters. The brand voice now lives in the user's profile and is fetched automatically whenever it's needed in later phases — the distributor never needs to manually paste it anywhere. Wait for `brand voice done` (or `done` / `saved` / `next` / `continue` / `go`).
 
 ---
 
