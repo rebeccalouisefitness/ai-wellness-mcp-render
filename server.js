@@ -139,40 +139,176 @@ function buildMcp() {
       last_name: z.string().optional().describe("Last name"),
       distributor_name: z.string().optional().describe("Direct distributor_name lookup"),
     },
-    async (args) => {
-      // The existing Netlify MCP still has get_distributor_profile via its MCP
-      // tool, but we can also expose this via the HTTP save endpoint's GET form
-      // (which writes-but-also-returns) or build a dedicated /api/get endpoint.
-      // For the minimal proof we'll call the existing Netlify MCP's JSON-RPC.
-      const url = `${NETLIFY_BASE}/mcp`;
-      try {
-        const r = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "tools/call",
-            params: {
-              name: "get_distributor_profile",
-              arguments: args,
-            },
-          }),
-        });
-        const json = await r.json();
-        if (json.error) throw new Error(json.error.message);
-        const text = json.result?.content?.[0]?.text || JSON.stringify(json.result);
-        return { content: [{ type: "text", text }] };
-      } catch (e) {
-        return {
-          content: [{ type: "text", text: `Profile fetch failed: ${e.message}` }],
-          isError: true,
-        };
-      }
-    }
+    async (args) => proxyMcpTool("get_distributor_profile", args)
+  );
+
+  // ── Proxied tools — these forward to the original Netlify MCP server's
+  // JSON-RPC handler. Each one is a thin wrapper that lets Claude call the
+  // existing tool through the cleaner Render protocol path.
+
+  server.tool(
+    "get_skill_master",
+    "Fetch the master skill playbook (master.md) with cache version envelope.",
+    {},
+    async (args) => proxyMcpTool("get_skill_master", args)
+  );
+
+  server.tool(
+    "get_step",
+    "Fetch a specific step file by name (e.g. 'step-2-domain').",
+    { step_name: z.string().describe("Step file name without .md extension") },
+    async (args) => proxyMcpTool("get_step", args)
+  );
+
+  server.tool(
+    "get_template",
+    "Fetch the raw HTML template for a page type (recruit, customer, thank-you-recruit, thank-you-customer).",
+    { template_name: z.string().describe("Template name: recruit, customer, thank-you-recruit, thank-you-customer") },
+    async (args) => proxyMcpTool("get_template", args)
+  );
+
+  server.tool(
+    "get_styled_template",
+    "Fetch a styled/branded version of a template with brand kit colors already applied.",
+    {
+      template_name: z.string().describe("Template name"),
+      brand_kit_id: z.string().describe("Brand kit identifier"),
+    },
+    async (args) => proxyMcpTool("get_styled_template", args)
+  );
+
+  server.tool(
+    "get_brand_kits",
+    "Fetch all 10 brand kit definitions (colors, fonts, archetypes).",
+    {},
+    async (args) => proxyMcpTool("get_brand_kits", args)
+  );
+
+  server.tool(
+    "get_personas",
+    "Fetch the persona library used for marketing-copy generation.",
+    {},
+    async (args) => proxyMcpTool("get_personas", args)
+  );
+
+  server.tool(
+    "get_persona_hooks",
+    "Fetch hook templates by persona for content generation.",
+    { persona_id: z.string().optional().describe("Persona identifier") },
+    async (args) => proxyMcpTool("get_persona_hooks", args)
+  );
+
+  server.tool(
+    "list_resources",
+    "List all available resources (templates, brand kits, step files, etc.) with metadata.",
+    {},
+    async (args) => proxyMcpTool("list_resources", args)
+  );
+
+  server.tool(
+    "substitute_and_publish",
+    "Apply distributor data + brand kit to a template and publish the rendered HTML to the styled-pages store. Returns the Netlify URL of the rendered page.",
+    {
+      brand_kit_id: z.string().describe("Brand kit identifier"),
+      template_name: z.string().describe("Template name"),
+      distributor_data: z.record(z.any()).optional().describe("Distributor data object with first_name, last_name, story, etc."),
+      photo_data_uris: z.record(z.string()).optional().describe("Photo slot → data URI map"),
+      form_id: z.string().optional().describe("Kajabi form ID"),
+      form_embed_js_url: z.string().optional().describe("Kajabi form embed JS URL"),
+      video_url: z.string().optional().describe("Distributor-uploaded video URL"),
+      page_slug: z.string().optional().describe("Canonical page slug"),
+    },
+    async (args) => proxyMcpTool("substitute_and_publish", args)
+  );
+
+  server.tool(
+    "add_video_to_published_page",
+    "Inject a video URL into an already-published page's video placeholder.",
+    {
+      distributor_name: z.string().describe("Distributor identifier"),
+      template_name: z.string().describe("Template name (typically thank-you-recruit)"),
+      video_url: z.string().describe("Distributor video URL"),
+    },
+    async (args) => proxyMcpTool("add_video_to_published_page", args)
+  );
+
+  server.tool(
+    "get_latest_video_upload",
+    "Fetch metadata about the most recent video upload for a distributor.",
+    { distributor_name: z.string().describe("Distributor identifier") },
+    async (args) => proxyMcpTool("get_latest_video_upload", args)
+  );
+
+  server.tool(
+    "get_latest_photo_upload",
+    "Fetch metadata about the most recent photo upload for a distributor.",
+    {
+      distributor_name: z.string().describe("Distributor identifier"),
+      page: z.string().optional().describe("Page type: recruit or customer"),
+    },
+    async (args) => proxyMcpTool("get_latest_photo_upload", args)
+  );
+
+  server.tool(
+    "start_customer_build",
+    "Kick off the customer page build sequence with the distributor's saved data + brand kit.",
+    {
+      distributor_name: z.string().describe("Distributor identifier"),
+      brand_kit_id: z.string().optional().describe("Brand kit (defaults to saved value)"),
+    },
+    async (args) => proxyMcpTool("start_customer_build", args)
+  );
+
+  server.tool(
+    "start_recruit_build",
+    "Kick off the team-member page build sequence with the distributor's saved data + brand kit.",
+    {
+      distributor_name: z.string().describe("Distributor identifier"),
+      brand_kit_id: z.string().optional().describe("Brand kit (defaults to saved value)"),
+    },
+    async (args) => proxyMcpTool("start_recruit_build", args)
+  );
+
+  server.tool(
+    "upload_distributor_photo_chunk",
+    "Upload a photo chunk for a distributor (used as part of the chunked photo upload flow).",
+    {
+      distributor_name: z.string().describe("Distributor identifier"),
+      slot: z.string().describe("Photo slot identifier"),
+      chunk_index: z.number().describe("Chunk index"),
+      total_chunks: z.number().describe("Total chunk count"),
+      data_uri: z.string().describe("Base64 data URI"),
+    },
+    async (args) => proxyMcpTool("upload_distributor_photo_chunk", args)
   );
 
   return server;
+}
+
+// Forward an MCP tool call to the existing Netlify MCP server.
+async function proxyMcpTool(toolName, args) {
+  const url = `${NETLIFY_BASE}/mcp`;
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: Date.now(),
+        method: "tools/call",
+        params: { name: toolName, arguments: args || {} },
+      }),
+    });
+    const json = await r.json();
+    if (json.error) throw new Error(json.error.message || String(json.error));
+    const text = json.result?.content?.[0]?.text || JSON.stringify(json.result);
+    return { content: [{ type: "text", text }] };
+  } catch (e) {
+    return {
+      content: [{ type: "text", text: `${toolName} failed: ${e.message}` }],
+      isError: true,
+    };
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
