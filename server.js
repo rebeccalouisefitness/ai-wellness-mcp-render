@@ -182,9 +182,103 @@ function buildMcp() {
 const app = express();
 app.use(express.json());
 
+// Public base URL — used in OAuth metadata. Falls back to Render's external host.
+const PUBLIC_BASE =
+  process.env.PUBLIC_BASE ||
+  (process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL : "https://ai-wellness-mcp-render.onrender.com");
+
+const NO_CACHE = {
+  "Cache-Control": "no-cache, no-store, must-revalidate",
+  "Pragma": "no-cache",
+};
+
 // Health check
 app.get("/", (req, res) => {
   res.status(200).json({ ok: true, name: "ai-wellness-mcp-render", version: "0.1.0" });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Fake OAuth for claude.ai connector compatibility
+//
+// claude.ai's connector framework requires OAuth registration even for
+// servers that don't actually need authentication. These endpoints
+// auto-approve everything silently so no distributor sees a login screen.
+// ──────────────────────────────────────────────────────────────────────────
+
+const STATIC_CLIENT_ID = "ai-wellness-public-anonymous-client";
+const STATIC_ISSUED_AT = 1717200000;
+
+app.get("/.well-known/oauth-protected-resource", (req, res) => {
+  res.set(NO_CACHE).json({
+    resource: `${PUBLIC_BASE}/mcp`,
+    authorization_servers: [PUBLIC_BASE],
+    bearer_methods_supported: ["header"],
+  });
+});
+
+app.get("/.well-known/oauth-authorization-server", (req, res) => {
+  res.set(NO_CACHE).json({
+    issuer: PUBLIC_BASE,
+    authorization_endpoint: `${PUBLIC_BASE}/oauth/authorize`,
+    token_endpoint: `${PUBLIC_BASE}/oauth/token`,
+    registration_endpoint: `${PUBLIC_BASE}/oauth/register`,
+    response_types_supported: ["code"],
+    grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
+    code_challenge_methods_supported: ["S256", "plain"],
+    token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+    scopes_supported: ["mcp"],
+  });
+});
+
+app.post("/oauth/register", (req, res) => {
+  const reqBody = req.body || {};
+  res.status(201).set(NO_CACHE).json({
+    client_id: STATIC_CLIENT_ID,
+    client_id_issued_at: STATIC_ISSUED_AT,
+    client_name: "AI Wellness Public Client",
+    redirect_uris: reqBody.redirect_uris || [],
+    grant_types: reqBody.grant_types || ["authorization_code", "refresh_token"],
+    response_types: reqBody.response_types || ["code"],
+    token_endpoint_auth_method: "none",
+  });
+});
+
+// /oauth/authorize — auto-approve, 302-redirect back with static code
+app.get("/oauth/authorize", (req, res) => {
+  const redirectUri = req.query.redirect_uri || "";
+  const state = req.query.state || "";
+  if (!redirectUri) {
+    return res.status(400).json({ error: "missing redirect_uri" });
+  }
+  const url = new URL(redirectUri);
+  url.searchParams.set("code", "auto-approved-code");
+  if (state) url.searchParams.set("state", state);
+  res.set(NO_CACHE).redirect(302, url.toString());
+});
+
+// /oauth/token — return a unique opaque token per request
+app.post("/oauth/token", (req, res) => {
+  const uniq = Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 12);
+  res.status(200).set(NO_CACHE).json({
+    access_token: "aiw_at_" + uniq,
+    token_type: "Bearer",
+    expires_in: 86400,
+    refresh_token: "aiw_rt_" + uniq,
+    scope: "mcp",
+  });
+});
+
+// CORS preflight for all the above endpoints
+app.options(["/mcp", "/oauth/*", "/.well-known/*"], (req, res) => {
+  res
+    .set({
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, MCP-Protocol-Version, Mcp-Session-Id",
+      "Access-Control-Max-Age": "600",
+    })
+    .status(204)
+    .end();
 });
 
 // Session storage — transport per session ID so subsequent requests reach
