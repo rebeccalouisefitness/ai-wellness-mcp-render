@@ -33,9 +33,9 @@ function buildMcp() {
   // ── get_step_by_phase ────────────────────────────────────────────────
   server.tool(
     "get_step_by_phase",
-    "Fetch the step file for a given phase number (1-9). Returns the markdown content used to drive that phase of the conversation.",
+    "Fetch the step file for a given phase number (1-9, plus 7.5). Returns the markdown content used to drive that phase of the conversation.",
     {
-      phase: z.string().describe("Phase number: 1 (welcome+brand voice), 2 (domain), 3 (Kajabi+brand kit), 4 (Calendly), 5 (team pages), 6 (customer pages), 7 (emails), 8 (ManyChat), 9 (launch)."),
+      phase: z.string().describe("Phase number: 1 (welcome+brand voice), 2 (domain), 3 (Kajabi+brand kit), 4 (Calendly), 5 (team pages), 6 (customer pages), 7 (emails), 7.5 (pre-ManyChat funnel test), 8 (ManyChat), 9 (launch)."),
     },
     async ({ phase }) => {
       const PHASE_FILES = {
@@ -46,13 +46,14 @@ function buildMcp() {
         5: "step-5-recruit-build.md",
         6: "step-5-page-2-thankyou-customer.md",
         7: "step-6-manychat.md",
+        "7.5": "step-7.5-funnel-test.md",
         8: "step-7-emails.md",
         9: "step-8-publish.md",
       };
       const file = PHASE_FILES[String(phase)];
       if (!file) {
         return {
-          content: [{ type: "text", text: `Unknown phase: ${phase}. Valid phases are 1-9.` }],
+          content: [{ type: "text", text: `Unknown phase: ${phase}. Valid phases are 1-9 (plus 7.5).` }],
           isError: true,
         };
       }
@@ -141,6 +142,10 @@ function buildMcp() {
       manychat_installed: z.boolean().optional().describe("True once distributor has imported the ManyChat template."),
       manychat_complete: z.boolean().optional().describe("Alias for manychat_installed."),
       launching_confirmed: z.boolean().optional().describe("True when the distributor confirms they've launched (final phase complete)."),
+      // v161 — pre-ManyChat funnel test gate (Phase 7.5)
+      funnel_test_passed: z.boolean().optional().describe("True when the Phase 7.5 end-to-end funnel test passed for BOTH recruit + customer funnels (contact created, tag applied, welcome sequence enrolled, Calendly link matches profile). Idempotent gate — Phase 7.5 skips if true."),
+      recruit_lead_tag: z.string().optional().describe("Override for the expected recruit-funnel tag name (defaults to 'AI Wellness Recruit Lead' in step-7.5)."),
+      customer_lead_tag: z.string().optional().describe("Override for the expected customer-funnel tag name (defaults to 'AI Wellness Customer Lead' in step-7.5)."),
     },
     async (args) => {
       const url = `${NETLIFY_BASE}/api/save-distributor-profile`;
