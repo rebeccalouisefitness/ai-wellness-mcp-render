@@ -95,9 +95,15 @@ function buildMcp() {
   );
 
   // ── save_distributor_profile ─────────────────────────────────────────
+  // v160 (2026-06-04): added distributor_slug + 16 dashboard fields.
+  // Downstream Netlify save handler already accepts these (and via the
+  // forward-compat loop at lines 117-122 of save-distributor-profile.mjs
+  // preserves any extra field). The Render MCP just needed to stop
+  // dropping them in Zod validation. Field names match exactly what
+  // ai-wellness-distributor-dashboard/netlify/functions/list-distributors.mjs reads.
   server.tool(
     "save_distributor_profile",
-    "Save or update the user's profile (brand voice answers, name, country, etc). Profiles persist across sessions.",
+    "Save or update the user's profile (brand voice answers, name, country, slug, domain, brand kit, calendly, form ids, page URLs, photo/manychat/launch flags, etc). All fields optional — partial saves are merged into the existing record. Profiles persist across sessions.",
     {
       first_name: z.string().optional().describe("First name"),
       last_name: z.string().optional().describe("Last name"),
@@ -109,6 +115,32 @@ function buildMcp() {
       transformation_story: z.string().optional().describe("Q1 — transformation story"),
       business_story: z.string().optional().describe("Q2 — business story"),
       last_step: z.string().optional().describe("Tracking value for current step"),
+      // v160 — dashboard string fields
+      distributor_slug: z.string().regex(/^[a-z0-9][a-z0-9_\-]{0,63}$/).optional().describe("Canonical slug for blob keys + page URLs. Lowercase alphanumeric + hyphens/underscores, 1-64 chars. Must start with letter or digit. Save the FIRST slug used for this distributor and reuse forever — never re-derive."),
+      distributor_domain: z.string().optional().describe("Distributor's Kajabi domain — e.g. 'yourpowermama.com' or 'xxx.mykajabi.com'."),
+      brand_kit: z.string().optional().describe("Selected brand kit name/id."),
+      palette_variant: z.string().optional().describe("Selected palette variant within the brand kit."),
+      calendly_url: z.string().optional().describe("Primary Calendly URL."),
+      calendly_recruit_url: z.string().optional().describe("Calendly URL for recruit/team-member calls."),
+      calendly_customer_url: z.string().optional().describe("Calendly URL for customer/coaching calls."),
+      form_id: z.string().optional().describe("Default Kajabi form id (recruit by convention)."),
+      recruit_form_id: z.string().optional().describe("Kajabi form id for the recruit page."),
+      customer_form_id: z.string().optional().describe("Kajabi form id for the customer page."),
+      recruit_url: z.string().optional().describe("Published recruit landing-page URL on the distributor's domain."),
+      recruit_thankyou_url: z.string().optional().describe("Published recruit thank-you page URL."),
+      customer_url: z.string().optional().describe("Published customer landing-page URL."),
+      customer_thankyou_url: z.string().optional().describe("Published customer thank-you page URL."),
+      video_recruit_url: z.string().optional().describe("Distributor's recruit/team-member video URL."),
+      current_phase: z.string().optional().describe("Human-readable current phase (mirror of last_step, kept for dashboard clarity)."),
+      // v160 — dashboard boolean flags
+      photos_recruit_uploaded: z.boolean().optional().describe("True once recruit-page photos are in the photos blob store."),
+      recruit_photos_uploaded: z.boolean().optional().describe("Alias for photos_recruit_uploaded."),
+      photo_customer_uploaded: z.boolean().optional().describe("True once customer-page photos are uploaded."),
+      customer_photos_uploaded: z.boolean().optional().describe("Alias for photo_customer_uploaded."),
+      photos_customer_uploaded: z.boolean().optional().describe("Alias for photo_customer_uploaded."),
+      manychat_installed: z.boolean().optional().describe("True once distributor has imported the ManyChat template."),
+      manychat_complete: z.boolean().optional().describe("Alias for manychat_installed."),
+      launching_confirmed: z.boolean().optional().describe("True when the distributor confirms they've launched (final phase complete)."),
     },
     async (args) => {
       const url = `${NETLIFY_BASE}/api/save-distributor-profile`;
