@@ -33,11 +33,15 @@ function buildMcp() {
   // ── get_step_by_phase ────────────────────────────────────────────────
   server.tool(
     "get_step_by_phase",
-    "Fetch the step file for a given phase number (1-9, plus 7.5). Returns the markdown content used to drive that phase of the conversation.",
+    "Fetch the step file for a given phase number (1-9). Returns the markdown content used to drive that phase of the conversation.",
     {
-      phase: z.string().describe("Phase number: 1 (welcome+brand voice), 2 (domain), 3 (Kajabi+brand kit), 4 (Calendly), 5 (team pages), 6 (customer pages), 7 (emails), 7.5 (pre-ManyChat funnel test), 8 (ManyChat), 9 (launch)."),
+      phase: z.string().describe("Phase number: 1 (welcome+brand voice), 2 (domain), 3 (Kajabi+brand kit), 4 (Calendly), 5 (team pages), 6 (customer pages), 7 (emails + tags + automations — ends with sub-step 8 'You test with your own email' + sub-step 9 'Email funnel complete'), 8 (ManyChat), 9 (launch)."),
     },
     async ({ phase }) => {
+      // v162 (2026-06-04): removed "7.5" entry — Phase 7.5 was misaligned with
+      // Rebecca's canonical reference doc at https://ai-wellness-phases.netlify.app/.
+      // The funnel-test content has been merged into Phase 7's existing file
+      // (step-6-manychat.md) as canonical sub-step 8 "You test with your own email".
       const PHASE_FILES = {
         1: "step-1-welcome-brand-voice.md",
         2: "step-2-domain.md",
@@ -46,14 +50,13 @@ function buildMcp() {
         5: "step-5-recruit-build.md",
         6: "step-5-page-2-thankyou-customer.md",
         7: "step-6-manychat.md",
-        "7.5": "step-7.5-funnel-test.md",
         8: "step-7-emails.md",
         9: "step-8-publish.md",
       };
       const file = PHASE_FILES[String(phase)];
       if (!file) {
         return {
-          content: [{ type: "text", text: `Unknown phase: ${phase}. Valid phases are 1-9 (plus 7.5).` }],
+          content: [{ type: "text", text: `Unknown phase: ${phase}. Valid phases are 1-9.` }],
           isError: true,
         };
       }
@@ -142,10 +145,13 @@ function buildMcp() {
       manychat_installed: z.boolean().optional().describe("True once distributor has imported the ManyChat template."),
       manychat_complete: z.boolean().optional().describe("Alias for manychat_installed."),
       launching_confirmed: z.boolean().optional().describe("True when the distributor confirms they've launched (final phase complete)."),
-      // v161 — pre-ManyChat funnel test gate (Phase 7.5)
-      funnel_test_passed: z.boolean().optional().describe("True when the Phase 7.5 end-to-end funnel test passed for BOTH recruit + customer funnels (contact created, tag applied, welcome sequence enrolled, Calendly link matches profile). Idempotent gate — Phase 7.5 skips if true."),
-      recruit_lead_tag: z.string().optional().describe("Override for the expected recruit-funnel tag name (defaults to 'AI Wellness Recruit Lead' in step-7.5)."),
-      customer_lead_tag: z.string().optional().describe("Override for the expected customer-funnel tag name (defaults to 'AI Wellness Customer Lead' in step-7.5)."),
+      // v162 — pre-ManyChat funnel test gate (Phase 7 sub-step 8 "You test with your own email")
+      // Fields originally added in v161 for the standalone Phase 7.5; v162 merged the test into
+      // Phase 7's existing file (step-6-manychat.md) per the canonical reference doc, so these
+      // fields are now read/written by that file. Field shape is unchanged for backward compat.
+      funnel_test_passed: z.boolean().optional().describe("True when the Phase 7 sub-step 8 'You test with your own email' end-to-end funnel test passed for BOTH recruit + customer funnels (contact created, tag applied, welcome sequence enrolled, Calendly link matches profile). Idempotent gate — sub-step 8 skips if true."),
+      recruit_lead_tag: z.string().optional().describe("Override for the expected recruit-funnel tag name (defaults to 'AI Wellness Recruit Lead' in step-6-manychat.md sub-step 8)."),
+      customer_lead_tag: z.string().optional().describe("Override for the expected customer-funnel tag name (defaults to 'AI Wellness Customer Lead' in step-6-manychat.md sub-step 8)."),
     },
     async (args) => {
       const url = `${NETLIFY_BASE}/api/save-distributor-profile`;
