@@ -35,9 +35,11 @@ function buildMcp() {
     "get_step_by_phase",
     "Fetch the step file for a given phase number (1-9). Returns the markdown content used to drive that phase of the conversation.",
     {
-      phase: z.string().describe("Phase number: 1 (welcome+brand voice), 2 (domain), 3 (Kajabi+brand kit), 4 (Calendly), 5 (team pages), 6 (customer pages), 7 (emails + tags + automations — ends with sub-step 8 'You test with your own email' + sub-step 9 'Email funnel complete'), 8 (ManyChat), 9 (launch)."),
+      phase: z.string().describe("Phase number: 1 (welcome+brand voice), 2 (domain), 3 (Kajabi+brand kit), 4 (Calendly), 5 (team pages), 6 (customer pages), 7 (emails + tags + automations — ends with sub-step 8 'You test with your own email' + sub-step 9 'Email funnel complete'), 8 (ManyChat), 9 (launch). Phase 2 routes (v163): 'P2.0' (Content Engine gate — sends link + waits for LEARN), 'P2.1' (Customer + Recruit call scripts — sends both + waits for READY)."),
     },
     async ({ phase }) => {
+      // v163 (2026-06-05): added "P2.0" + "P2.1" — Phase 2 wired live. Phase 9
+      // auto-fires P2.0 on LAUNCH; P2.0 chains to P2.1 on LEARN.
       // v162 (2026-06-04): removed "7.5" entry — Phase 7.5 was misaligned with
       // Rebecca's canonical reference doc at https://ai-wellness-phases.netlify.app/.
       // The funnel-test content has been merged into Phase 7's existing file
@@ -52,11 +54,13 @@ function buildMcp() {
         7: "step-6-manychat.md",
         8: "step-7-emails.md",
         9: "step-8-publish.md",
+        "P2.0": "step-phase2-0-gate.md",
+        "P2.1": "step-phase2-1-call-scripts.md",
       };
       const file = PHASE_FILES[String(phase)];
       if (!file) {
         return {
-          content: [{ type: "text", text: `Unknown phase: ${phase}. Valid phases are 1-9.` }],
+          content: [{ type: "text", text: `Unknown phase: ${phase}. Valid phases are 1-9, P2.0, P2.1.` }],
           isError: true,
         };
       }
@@ -145,6 +149,14 @@ function buildMcp() {
       manychat_installed: z.boolean().optional().describe("True once distributor has imported the ManyChat template."),
       manychat_complete: z.boolean().optional().describe("Alias for manychat_installed."),
       launching_confirmed: z.boolean().optional().describe("True when the distributor confirms they've launched (final phase complete)."),
+      // v163 (2026-06-05) — Phase 2 flow flags.
+      // phase2_started is saved in the SAME save_distributor_profile call as launching_confirmed
+      // (see step-8-publish.md Launch handler). content_engine_link_sent is saved when Phase 2.0
+      // delivers the Content Engine URL. scripts_delivered is saved when Phase 2.1 delivers both
+      // call scripts. Each is an idempotent gate — the corresponding step file skips if already true.
+      phase2_started: z.boolean().optional().describe("True when the distributor types LAUNCH after Phase 9 and Phase 2 begins. Saved alongside launching_confirmed in the same payload."),
+      content_engine_link_sent: z.boolean().optional().describe("True when Phase 2.0 has sent the distributor their Content Engine URL (https://aiw-content.netlify.app placeholder until per-distributor generator ships)."),
+      scripts_delivered: z.boolean().optional().describe("True when Phase 2.1 has delivered both the Customer Call Script and the Recruit Call Script."),
       // v162 — pre-ManyChat funnel test gate (Phase 7 sub-step 8 "You test with your own email")
       // Fields originally added in v161 for the standalone Phase 7.5; v162 merged the test into
       // Phase 7's existing file (step-6-manychat.md) per the canonical reference doc, so these
