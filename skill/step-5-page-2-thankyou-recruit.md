@@ -55,11 +55,19 @@ If returns 422 "slug exists": `kajabi.update_landing_page(<existing id>, custom_
 
 > Thank-you page live ✓ → `https://www.{distributor_domain}/ai-wellness-business-thank-you`
 >
-> One last thing — your **2-minute explainer video**. Upload it here: `https://ai-wellness-business.netlify.app/upload-video?distributor={distributor_slug}` 
+> One last thing — your **2-minute explainer video**. Upload it here: `https://ai-wellness-business.netlify.app/upload-video?distributor={distributor_slug}&page=recruit-thank-you` 
 >
 > The page is live with a placeholder for now. As soon as you upload, I'll swap your video in automatically. Type **video done** when uploaded.
 
 **Then wait for `video done` (variations: `done`, `recorded`, `uploaded the video`, `uploaded`).**
+
+**HARD RULE 5-VIDEO-URL — The video upload URL is EXACT. Paste verbatim, substitute only `{distributor_slug}`. NEVER:**
+- Drop the `&page=recruit-thank-you` query param (poller filters on `target_page` — without this, the upload is invisible).
+- Change `/upload-video` to `/upload-photos` (different endpoint, different manifest — uploads will succeed but the video poll will hang forever and the distributor gets stuck silently).
+- Change `recruit-thank-you` to `recruit-thankyou` / `recruit_thank_you` / `recruitthankyou` (string match must be exact, two hyphens).
+- Offer YouTube, Loom, Vimeo, Dropbox, GDrive as alternatives — the only host is the upload portal.
+
+Locked 2026-06-07 after Simona received `/upload-photos?...&page=recruit-thankyou` (both bugs above) and got stuck.
 
 ## Step 5.10 — Video injection (Kajabi MCP)
 
