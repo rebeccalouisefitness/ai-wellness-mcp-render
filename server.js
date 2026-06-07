@@ -289,19 +289,31 @@ function buildMcp() {
 
   server.tool(
     "get_latest_video_upload",
-    "Fetch metadata about the most recent video upload for a distributor.",
-    { distributor_name: z.string().describe("Distributor identifier") },
-    async (args) => proxyMcpTool("get_latest_video_upload", args)
+    "Fetch metadata about the most recent video upload for a distributor. distributor_slug must match the canonical slug saved in Phase 1.",
+    {
+      distributor_slug: z.string().optional().describe("Canonical slug for blob keys + page URLs."),
+      distributor_name: z.string().optional().describe("Alias for distributor_slug. Either field is accepted; distributor_slug wins if both are passed."),
+      min_timestamp_ms: z.number().optional().describe("If passed, only return uploads with timestamp >= this value."),
+    },
+    async (args) => proxyMcpTool("get_latest_video_upload", {
+      ...args,
+      distributor_slug: args.distributor_slug || args.distributor_name,
+    })
   );
 
   server.tool(
     "get_latest_photo_upload",
-    "Fetch metadata about the most recent photo upload for a distributor.",
+    "Fetch metadata about the most recent photo upload for a distributor. distributor_slug must match the canonical slug saved in Phase 1.",
     {
-      distributor_name: z.string().describe("Distributor identifier"),
+      distributor_slug: z.string().optional().describe("Canonical slug for blob keys + page URLs."),
+      distributor_name: z.string().optional().describe("Alias for distributor_slug. Either field is accepted; distributor_slug wins if both are passed."),
       page: z.string().optional().describe("Page type: recruit or customer"),
+      min_timestamp_ms: z.number().optional().describe("If passed, only return uploads with timestamp >= this value."),
     },
-    async (args) => proxyMcpTool("get_latest_photo_upload", args)
+    async (args) => proxyMcpTool("get_latest_photo_upload", {
+      ...args,
+      distributor_slug: args.distributor_slug || args.distributor_name,
+    })
   );
 
   server.tool(
