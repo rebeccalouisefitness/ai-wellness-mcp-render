@@ -85,9 +85,23 @@ All 4 pages built via Kajabi MCP API calls. Single mid-progress line per page (`
 
 ## Video script handoff (Block 4)
 
-Unchanged from the Chrome flow. Pull `video-scripts/recruit-thank-you-explainer-v2-2min.md`. Substitute tokens. Voice: peer-entrepreneur, calm/direct/confident — never BURN-aggressive.
+Pull `video-scripts/recruit-thank-you-explainer-v2-2min.md` as the canonical structure. Voice: peer-entrepreneur, calm/direct/confident — never BURN-aggressive.
 
-Send inline with the build kickoff so the user can record while the build runs.
+**HARD RULE 5-SCRIPT-1 — Personalize STORY beats, LOCK the solution beat.** The script has two layers that must be handled differently:
+
+**PERSONALIZE these beats using the distributor's saved Phase 1 brand voice (`distributor_brand_voice_story`, `transformation_story`, `business_story`):**
+- Hook — open in their voice. Use their `signature_phrase` if it fits. Example shape: "Hey — {first_name} here. If you're watching this, you just showed interest in AI Wellness."
+- Problem beat — replace generic "distributors quit inside 18 months" framing with THEIR lived experience drawn from `brand_voice_story` / `transformation_story`. What pain point pushed THEM to look for a system.
+- Who-it's-for — qualify in their voice with their target customer mindset (from Phase 1 `target_customer`).
+- CTA — sign off in their voice.
+
+**LOCK the SOLUTION beat to the canonical AI Wellness pitch — no rewording, no omitting any element:**
+The solution beat MUST contain ALL of: (1) the product name "AI Wellness", (2) "Claude — yes, the AI — set up as your business partner", (3) the 11-step system, (4) what the system builds (brand voice + two websites + email sequences + ManyChat flows + private community), (5) "All wearing your kit, {kit_name}, in your voice. Not mine.", (6) the outcome ("AI does the first 80% of every conversation").
+The distributor's personality stays out of this beat — this is the part that explains the product to the prospect. If the solution beat doesn't pitch AI Wellness clearly, the recruit page doesn't convert.
+
+**AUDIENCE — they are PROSPECTS, not current distributors.** The recruit page exists to bring NEW people into the team. They have NOT applied (they showed interest by submitting a form). NEVER write "you just applied" / "as a distributor" / "since you're already running customers". Frame everything for someone considering joining for the first time.
+
+Send the personalized script inline with the build kickoff so the user can record while the build runs.
 
 ## Video embed (Block 7) — Kajabi MCP
 
