@@ -156,6 +156,7 @@ If the profile has data (returning distributor in a new chat), use the saved `la
 - Calls only, NO SMS.
 - Final page on distributor's Kajabi domain (Netlify URL is intermediate).
 - Max 2 sentences per distributor-facing message. NEVER chunk HTML / Auto-fire / Never Draft.
+- **HARD RULE — Every distributor-facing message that asks the distributor to do something off-chat (upload a file, click a link, record a video, log into a platform, complete a form, drop a domain into GoDaddy, etc.) MUST end with an explicit, concrete next-step instruction: "Type X when you're done" / "When you've uploaded, come back here and say done" / "Once you've finished, paste the link below". The next-step keyword must match what the skill is waiting on (e.g. `video done`, `done`, `photos uploaded`). NEVER send a link or instruction alone — the distributor must always know exactly how to signal completion. Locked 2026-06-07 after Simona's Claude sent the upload link with no "come back when you're done" pointer and she sat stuck.
 - Auto-clean test contacts after end-to-end tests. Bounded tweak window after live (copy/photo/video/Calendly URL allowed; structure/form fields/CTA locked).
 
 Per-step enforcement detail lives in each `step-N.md` file.
