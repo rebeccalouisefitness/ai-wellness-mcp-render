@@ -83,6 +83,10 @@ Returns `{ found: true, video_url, ... }`. If `found: false`, ask the user to re
 
 **2 — Validate the URL:** must be on `ai-wellness-business.netlify.app/distributor-videos/...` or `/distributor-media/...`. Reject YouTube, Vimeo, Wistia, Kajabi Media (HARD RULE — `aiw.add_video_to_published_page` enforces this server-side too).
 
+**HARD RULE — NEVER MANUALLY TYPE THE VIDEO URL.** Use the exact `video_url` string returned by `aiw.get_latest_video_upload` verbatim. Prefer `aiw.add_video_to_published_page` which substitutes server-side and removes the typing step entirely. Typing the URL by hand risks invisible character drift — a single `e`↔`i` slip (e.g. `netlify.app` → `netlevel.app`, or `distributor-videos` → `distributor-video`) silently 404s the live page and the distributor sees a broken video. If you ever find yourself reconstructing the URL from memory, from a screenshot, or from chat scrollback — STOP and re-pull from `aiw.get_latest_video_upload`. The tool is the source of truth.
+
+**HARD RULE — VIDEO FIXES ALWAYS REBUILD THE FULL STYLED PAGE.** When fixing a broken video URL, you MUST call `aiw.substitute_and_publish` end-to-end with the saved `brand_kit` from `aiw.get_distributor_profile` and push the FULL rendered HTML back to the Kajabi Custom Code block. NEVER do a single-line find-and-replace on whatever HTML is already in Custom Code. Reason: a video fix that only patches one line preserves any legacy/unbranded HTML that was sitting there — the page stays off-brand. Burned 2026-06-03 with Dale: video URL got corrected but the Custom Code still had a pre-v100 dark navy fallback template instead of the styled `the-athlete` page. Rebuild the page, don't patch the line.
+
 **3 — Get the current page HTML from Kajabi:**
 
 ```
